@@ -5,6 +5,6 @@ import com.github.yandoroshenko.kinesisdemo.model.Event
 
 import scala.util.Try
 
-trait EventSource[T] {
+trait EventProvider[T] {
   def provideEvents(): Source[Try[Event[T]], _]
 }

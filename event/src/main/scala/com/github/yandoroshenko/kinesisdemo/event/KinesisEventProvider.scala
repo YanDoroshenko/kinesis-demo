@@ -28,7 +28,7 @@ case class KinesisConfig(
     limit: Int
 )
 
-class KinesisEventSource(config: KinesisConfig)(implicit actorSystem: ActorSystem, ec: ExecutionContext) extends EventSource[BigDecimal] {
+class KinesisEventProvider(config: KinesisConfig)(implicit actorSystem: ActorSystem, ec: ExecutionContext) extends EventProvider[BigDecimal] {
   val amazonKinesisAsync: KinesisAsyncClient =
     KinesisAsyncClient
       .builder()

@@ -2,5 +2,7 @@
 
 To do:
 * Better logging
-* Storage
+* Improve storage
+* Respond without waiting for storage
+* Testing
 * Improvements and nicification
