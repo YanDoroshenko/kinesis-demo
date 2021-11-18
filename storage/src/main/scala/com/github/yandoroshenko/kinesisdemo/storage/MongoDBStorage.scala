@@ -12,6 +12,7 @@ import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistr
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.bson.codecs.Macros._
 import org.mongodb.scala.model.{Filters, ReplaceOptions}
+import org.mongodb.scala.model.Sorts
 
 import scala.concurrent.ExecutionContext
 
@@ -29,13 +30,24 @@ class MongoDBStorage[T](config: MongoConfig)(
   private val collection = db.getCollection(config.collection, classOf[StorageEvent]).withCodecRegistry(codecRegistry)
 
   override val sink: Sink[Event[T], _] = {
-    Flow
-      .fromFunction { e: Event[T] =>
-        val storageEvent =
-          StorageEvent(s"${e.eventType}:${e.timestamp}:${e.value}", e.timestamp, e.eventType, transformer.transform(e.value))
-        DocumentReplace(Filters.eq("_id", storageEvent._id), storageEvent)
+    val futureSink = MongoSource(collection.find(classOf[StorageEvent]).sort(Sorts.descending("timestamp")).limit(1))
+      .map(_.timestamp)
+      .toMat(Sink.fold(0L)(Math.max))(Keep.right)
+      .run()
+      .map { maxTimestamp =>
+        Flow.apply
+          .filter { e: Event[T] =>
+            e.timestamp > maxTimestamp
+          }
+          .map { e =>
+            val storageEvent =
+              StorageEvent(s"${e.eventType}:${e.timestamp}:${e.value}", e.timestamp, e.eventType, transformer.transform(e.value))
+            DocumentReplace(Filters.eq("_id", storageEvent._id), storageEvent)
+          }
+          .to(MongoSink.replaceOne[StorageEvent](collection, new ReplaceOptions().upsert(true)))
       }
-      .to(MongoSink.replaceOne[StorageEvent](collection, new ReplaceOptions().upsert(true)))
+
+    Sink.futureSink(futureSink)
   }
 }
 
