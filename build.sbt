@@ -31,7 +31,7 @@ lazy val event =
 
 lazy val storage = (project in file("storage")).settings(libraryDependencies ++= Seq(akkaStream, alpakkaMongo)).dependsOn(core)
 
-lazy val service = (project in file("service")).settings(libraryDependencies ++= Seq(scalatest, scalacheck)).dependsOn(event, storage)
+lazy val service = (project in file("service")).settings(libraryDependencies ++= Seq(scalatest)).dependsOn(event, storage)
 
 lazy val http = (project in file("http"))
   .settings(libraryDependencies ++= Seq(akkaActor, akkaStream, akkaHttp, circeCore, circeGeneric, akkaHttpCirce, scalaLogging))
@@ -39,4 +39,4 @@ lazy val http = (project in file("http"))
 lazy val main = (project in file("main")).settings(libraryDependencies ++= Seq(akkaActor, scalaLogging)).dependsOn(service, http)
 
 lazy val `kinesis-demo` =
-  (project in file(".")).aggregate(core, event, storage, http, main)
+  (project in file(".")).aggregate(core, event, storage, service, http, main)
