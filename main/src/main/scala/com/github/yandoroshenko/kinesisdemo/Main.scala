@@ -19,7 +19,7 @@ object Main {
     val service = new DefaultService(eventProvider, storage)
 
     HttpApi.server { (eventType, from, to) =>
-      service.processEvents(eventType, from, to).run() .map { average =>
+      service.processEvents(eventType, from, to).run().map { average =>
         AverageResponse(eventType, average.value, average.processedCount)
       }
     }(HttpConfig("localhost", 9001))

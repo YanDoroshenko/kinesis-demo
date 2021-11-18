@@ -11,8 +11,10 @@ import com.typesafe.scalalogging.Logger
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class DefaultService(eventProvider: EventProvider[BigDecimal], storage: Storage[BigDecimal])(implicit executionContext: ExecutionContext, mat: Materializer)
-  extends Service {
+class DefaultService(eventProvider: EventProvider[BigDecimal], storage: Storage[BigDecimal])(
+    implicit executionContext: ExecutionContext,
+    mat: Materializer
+) extends Service {
 
   private val log = Logger(getClass)
 
@@ -20,19 +22,16 @@ class DefaultService(eventProvider: EventProvider[BigDecimal], storage: Storage[
     log.info("processEvents - eventType: {}, from: {}, to: {}", eventType, from, to)
 
     val events =
-      eventProvider
-        .provideEvents()
-        .divertTo(errorLog, _.isFailure)
-        .collect {
-          case Success(e) => e
-        }
+      eventProvider.provideEvents().divertTo(errorLog, _.isFailure).collect {
+        case Success(e) => e
+      }
     events.runWith(storage.sink)
 
     events
       .filter { e =>
         e.eventType == eventType &&
-          e.timestamp >= from &&
-          e.timestamp <= to
+        e.timestamp >= from &&
+        e.timestamp <= to
       }
       .toMat(average(sum))(Keep.right)
   }
