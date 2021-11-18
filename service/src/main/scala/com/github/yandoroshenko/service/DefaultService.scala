@@ -1,5 +1,6 @@
 package com.github.yandoroshenko.service
 
+import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, RunnableGraph, Sink}
 import com.github.yandoroshenko.kinesisdemo.event.EventProvider
 import com.github.yandoroshenko.kinesisdemo.model.Event
@@ -10,7 +11,7 @@ import com.typesafe.scalalogging.Logger
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class DefaultService(eventProvider: EventProvider[BigDecimal], storage: Storage[BigDecimal])(implicit executionContext: ExecutionContext)
+class DefaultService(eventProvider: EventProvider[BigDecimal], storage: Storage[BigDecimal])(implicit executionContext: ExecutionContext, mat: Materializer)
   extends Service {
 
   private val log = Logger(getClass)
@@ -18,17 +19,20 @@ class DefaultService(eventProvider: EventProvider[BigDecimal], storage: Storage[
   def processEvents(eventType: String, from: Long, to: Long): RunnableGraph[Future[Average]] = {
     log.info("processEvents - eventType: {}, from: {}, to: {}", eventType, from, to)
 
-    eventProvider
-      .provideEvents()
-      .divertTo(errorLog, _.isFailure)
-      .collect {
-        case Success(e) => e
-      }
-      .wireTap(storage.sink)
+    val events =
+      eventProvider
+        .provideEvents()
+        .divertTo(errorLog, _.isFailure)
+        .collect {
+          case Success(e) => e
+        }
+    events.runWith(storage.sink)
+
+    events
       .filter { e =>
         e.eventType == eventType &&
-        e.timestamp >= from &&
-        e.timestamp <= to
+          e.timestamp >= from &&
+          e.timestamp <= to
       }
       .toMat(average(sum))(Keep.right)
   }

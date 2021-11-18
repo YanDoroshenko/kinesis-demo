@@ -35,7 +35,6 @@ class MongoDBStorage[T](config: MongoConfig)(
           StorageEvent(s"${e.eventType}:${e.timestamp}:${e.value}", e.timestamp, e.eventType, transformer.transform(e.value))
         DocumentReplace(Filters.eq("_id", storageEvent._id), storageEvent)
       }
-      .buffer(1500000, OverflowStrategy.dropNew)
       .to(MongoSink.replaceOne[StorageEvent](collection, new ReplaceOptions().upsert(true)))
   }
 }
