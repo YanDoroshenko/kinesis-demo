@@ -7,12 +7,11 @@ import com.github.yandoroshenko.kinesisdemo.storage.Storage
 import com.github.yandoroshenko.service.DefaultService.{Average, Sum}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 import scala.util.{Random, Success}
 
 // Note: There's no support for property-based async testing
-class DefaultServiceSpec extends AsyncWordSpec with Matchers with ScalaCheckDrivenPropertyChecks {
+class DefaultServiceSpec extends AsyncWordSpec with Matchers {
 
   implicit val actorSystem: ActorSystem = ActorSystem()
 
@@ -28,7 +27,7 @@ class DefaultServiceSpec extends AsyncWordSpec with Matchers with ScalaCheckDriv
 
       val source = Source(events)
       val service = new DefaultService(() => Source.empty, new Storage[BigDecimal] {
-        override def sink: Sink[Event[BigDecimal], _] = Sink.ignore
+        override val sink: Sink[Event[BigDecimal], _] = Sink.ignore
       })
 
       source.runWith(Sink.seq).flatMap { es =>
@@ -44,7 +43,7 @@ class DefaultServiceSpec extends AsyncWordSpec with Matchers with ScalaCheckDriv
       val events = eventList()
       val source = Source(events)
       val service = new DefaultService(() => Source.empty, new Storage[BigDecimal] {
-        override def sink: Sink[Event[BigDecimal], _] = Sink.ignore
+        override val sink: Sink[Event[BigDecimal], _] = Sink.ignore
       })
 
       val sum = events.map(_.value).reduceOption(_ + _)
@@ -61,7 +60,7 @@ class DefaultServiceSpec extends AsyncWordSpec with Matchers with ScalaCheckDriv
       val to = Random.nextLong()
 
       val service = new DefaultService(() => Source(events.map(Success.apply)), new Storage[BigDecimal] {
-        override def sink: Sink[Event[BigDecimal], _] = Sink.ignore
+        override val sink: Sink[Event[BigDecimal], _] = Sink.ignore
       })
 
       val h = events.head

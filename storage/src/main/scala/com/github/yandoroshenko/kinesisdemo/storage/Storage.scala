@@ -4,5 +4,5 @@ import akka.stream.scaladsl.Sink
 import com.github.yandoroshenko.kinesisdemo.model.Event
 
 trait Storage[T] {
-  def sink: Sink[Event[T], _]
+  val sink: Sink[Event[T], _]
 }
