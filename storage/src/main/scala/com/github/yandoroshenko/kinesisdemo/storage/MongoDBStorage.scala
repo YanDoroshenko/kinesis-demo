@@ -26,8 +26,6 @@ class MongoDBStorage[T](config: MongoConfig)(implicit actorSystem: ActorSystem, 
         StorageEvent(e.timestamp, e.eventType, transformer.transform(e.value))
       }
       .to(MongoSink.insertOne[StorageEvent](collection))
-
-  def source = MongoSource(collection.find(classOf[StorageEvent]))
 }
 
 object MongoDBStorage {
@@ -38,5 +36,4 @@ object MongoDBStorage {
   implicit case object BigDecimalTransformer extends Transformer[BigDecimal] {
     override def transform(t: BigDecimal): String = t.toString
   }
-
 }

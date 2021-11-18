@@ -8,6 +8,7 @@ import akka.stream.scaladsl.{Flow, Source}
 import com.github.matsluni.akkahttpspi.AkkaHttpClient
 import com.github.yandoroshenko.kinesisdemo.model.implicits._
 import com.github.yandoroshenko.kinesisdemo.model.{Event, EventParser}
+import com.typesafe.scalalogging.Logger
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
@@ -28,7 +29,11 @@ case class KinesisConfig(
     limit: Int
 )
 
-class KinesisEventProvider(config: KinesisConfig)(implicit actorSystem: ActorSystem, ec: ExecutionContext) extends EventProvider[BigDecimal] {
+class KinesisEventProvider(config: KinesisConfig)(implicit actorSystem: ActorSystem, ec: ExecutionContext)
+  extends EventProvider[BigDecimal] {
+
+  private val log = Logger(getClass)
+
   val amazonKinesisAsync: KinesisAsyncClient =
     KinesisAsyncClient
       .builder()
@@ -45,6 +50,7 @@ class KinesisEventProvider(config: KinesisConfig)(implicit actorSystem: ActorSys
       .build()
 
   override def provideEvents(): Source[Try[Event[BigDecimal]], _] = {
+    log.info("Provide events")
 
     val shards: Source[List[Shard], NotUsed] = Source.future(
       amazonKinesisAsync

@@ -17,19 +17,26 @@ val akkaHttpCirce = "de.heikoseeberger" %% "akka-http-circe" % "1.38.2"
 val circeCore = "io.circe" %% "circe-core" % circeVersion
 val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
 
+val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
+val logback =  "ch.qos.logback" % "logback-classic" % "1.2.3"
 val slf4j = "org.slf4j" % "slf4j-simple" % "1.7.32"
 
-lazy val core = (project in file("core")).settings(libraryDependencies ++= Seq(slf4j))
+val scalatest = "org.scalatest" %% "scalatest" % "3.2.10" % Test
+val scalacheck = "org.scalatestplus" %% "scalacheck-1-15" % "3.2.9.0" % Test
 
-lazy val event = (project in file("event")).settings(libraryDependencies ++= Seq(akkaActor, akkaStream, alpakkaKinesis, slf4j)).dependsOn(core)
+lazy val core = (project in file("core")).settings(libraryDependencies ++= Seq(scalatest, scalacheck))
+
+lazy val event =
+  (project in file("event")).settings(libraryDependencies ++= Seq(akkaActor, akkaStream, alpakkaKinesis, scalaLogging, scalatest)).dependsOn(core)
 
 lazy val storage = (project in file("storage")).settings(libraryDependencies ++= Seq(akkaStream, alpakkaMongo)).dependsOn(core)
 
-lazy val service = (project in file("service")).dependsOn(event, storage)
+lazy val service = (project in file("service")).settings(libraryDependencies ++= Seq(scalatest, scalacheck)).dependsOn(event, storage)
 
-lazy val http = (project in file("http")).settings(libraryDependencies ++= Seq(akkaActor, akkaStream, akkaHttp, circeCore, circeGeneric, akkaHttpCirce, slf4j))
+lazy val http = (project in file("http"))
+  .settings(libraryDependencies ++= Seq(akkaActor, akkaStream, akkaHttp, circeCore, circeGeneric, akkaHttpCirce, scalaLogging))
 
-lazy val main = (project in file("main")).settings(libraryDependencies ++= Seq(akkaActor, slf4j)).dependsOn(service, http)
+lazy val main = (project in file("main")).settings(libraryDependencies ++= Seq(akkaActor, scalaLogging)).dependsOn(service, http)
 
 lazy val `kinesis-demo` =
   (project in file(".")).aggregate(core, event, storage, http, main)
